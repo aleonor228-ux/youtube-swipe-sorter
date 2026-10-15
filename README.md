@@ -25,7 +25,9 @@ Built as a single self-contained application using HTML5, CSS3, Vanilla JavaScri
   - Haptic feedback on supported mobile devices.
   - Screen Wake Lock to keep the display active during long backlog triage sessions.
 
-- **🎬 Official YouTube Embed**:
+- **🎬 Official YouTube Embed & Autoplay**:
+  - **Instant Automatic Playback**: Videos auto-play automatically when loaded and when swiping to the next card without requiring manual clicks on play buttons.
+  - **📱 Vertical Drama Mode (9:16)**: Built-in portrait mode specifically optimized for vertical dramas, shorts, and reels with full-bleed tall player layout and quick `📱 9:16` / `🖥️ 16:9` toggle.
   - Embedded player with -10s / +10s seek and 1.0x – 2.0x playback speeds.
   - Automatic error recovery for restricted embeds (codes 100/101/150/153) with direct "Open in YouTube" options.
   - Preloaded metadata and thumbnails for upcoming videos for near-instant card transitions.
