@@ -533,6 +533,363 @@
       box-shadow: 0 0 6px #22c55e;
     }
 
+    /* ==========================================================================
+       GESTURE OVERLAY (Double-Tap to Seek ±10s, Hold for 2x Speed, Tap to Play/Pause)
+       ========================================================================== */
+    .player-gesture-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    .gesture-ripple-box {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+    }
+
+    .gesture-ripple-box.animate-ripple {
+      animation: ripple-pulse 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes ripple-pulse {
+      0% { opacity: 0.9; transform: scale(0.92); }
+      50% { opacity: 1; transform: scale(1.06); }
+      100% { opacity: 0; transform: scale(1); }
+    }
+
+    .gesture-ripple-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: rgba(10, 13, 18, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      width: 66px;
+      height: 66px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .gesture-arrow {
+      font-size: 19px;
+      color: #fff;
+    }
+
+    .gesture-label {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: 0.05em;
+    }
+
+    /* Center play / pause feedback flash */
+    .gesture-center-flash {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(15, 20, 28, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 6;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .gesture-center-flash.animate-flash {
+      animation: center-flash 0.5s ease-out forwards;
+    }
+
+    @keyframes center-flash {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+      30% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      70% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
+    }
+
+    /* 2x Speed Hold Badge */
+    .speed-hold-badge {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(234, 179, 8, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #000;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 20px rgba(234, 179, 8, 0.55);
+      z-index: 16;
+      pointer-events: none;
+      animation: badge-pulse 1s infinite alternate ease-in-out;
+    }
+
+    @keyframes badge-pulse {
+      0% { transform: translateX(-50%) scale(0.97); }
+      100% { transform: translateX(-50%) scale(1.03); }
+    }
+
+    .speed-badge-dot {
+      width: 7px;
+      height: 7px;
+      background: #000;
+      border-radius: 50%;
+    }
+
+    /* Auto-Advance on Episode End Countdown Pill */
+    .auto-advance-pill {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 8px 14px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 18;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.25);
+      animation: advance-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes advance-appear {
+      0% { opacity: 0; transform: translate(-50%, 15px) scale(0.95); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    .advance-pill-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .advance-check {
+      color: #22c55e;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .advance-pill-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .advance-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .advance-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .advance-btn.primary {
+      background: var(--color-watch);
+      color: #000;
+      border-color: var(--color-watch);
+    }
+
+    .advance-btn.primary:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Floating Bottom Undo Pill */
+    .floating-undo-pill {
+      position: absolute;
+      bottom: 78px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 24, 38, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-focus);
+      border-radius: 28px;
+      padding: 7px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 40;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      animation: undo-pill-pop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    @keyframes undo-pill-pop {
+      0% { opacity: 0; transform: translate(-50%, 20px) scale(0.9); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    .floating-undo-msg {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .undo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .undo-dot.watch { background: var(--color-watch); box-shadow: 0 0 8px var(--color-watch); }
+    .undo-dot.avoid { background: var(--color-avoid); box-shadow: 0 0 8px var(--color-avoid); }
+    .undo-dot.archive { background: var(--color-archive); box-shadow: 0 0 8px var(--color-archive); }
+
+    .floating-undo-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .floating-undo-btn:hover, .floating-undo-btn:active {
+      background: rgba(255, 255, 255, 0.22);
+      transform: scale(0.96);
+    }
+
+    .floating-undo-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+    }
+
+    /* AMOLED Pure Black Theme */
+    body.theme-amoled,
+    body.theme-amoled #app-root {
+      background-color: #000000 !important;
+    }
+    body.theme-amoled header.app-header {
+      background: rgba(0, 0, 0, 0.95) !important;
+      border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    body.theme-amoled .swipe-card {
+      background: #000000 !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9) !important;
+    }
+    body.theme-amoled .preview-card {
+      background: #000000 !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+    }
+    body.theme-amoled .card-body {
+      background: #000000 !important;
+    }
+    body.theme-amoled .player-tools-bar {
+      background: #000000 !important;
+      border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    body.theme-amoled .action-controls-bar {
+      background: rgba(0, 0, 0, 0.96) !important;
+      border-top-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    body.theme-amoled .modal-sheet {
+      background: #000000 !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    body.theme-amoled .modal-header {
+      background: rgba(0, 0, 0, 0.95) !important;
+    }
+    body.theme-amoled .modal-sheet-inner,
+    body.theme-amoled .export-card,
+    body.theme-amoled .shortcuts-box {
+      background: #080808 !important;
+    }
+
+    /* Quick Playlist & Copy Buttons in Stats Row */
+    .quick-stat-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-quick-stat {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      border-radius: 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-quick-stat:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+    }
+
+    .btn-quick-stat.watch-btn {
+      color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.3);
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .btn-quick-stat.watch-btn:hover {
+      background: rgba(34, 197, 94, 0.18);
+    }
+
     /* Video Error Overlay */
     .player-error-overlay {
       position: absolute;
@@ -1402,6 +1759,11 @@
           <span id="queue-badge" class="badge-counter" style="display:none;">0</span>
         </button>
 
+        <!-- AMOLED Pure Black Toggle -->
+        <button id="btn-toggle-amoled" class="icon-btn" title="Toggle AMOLED True Black Theme (OLED)" aria-label="AMOLED Theme">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
         <!-- Main Menu / Secondary Options Button -->
         <button id="btn-open-menu" class="icon-btn" title="Menu & Export" aria-label="Menu">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1427,6 +1789,10 @@
           <span class="pill-stat"><span class="pill-dot watch"></span><span id="stat-watch">0</span></span>
           <span class="pill-stat"><span class="pill-dot archive"></span><span id="stat-archive">0</span></span>
           <span class="pill-stat"><span class="pill-dot avoid"></span><span id="stat-avoid">0</span></span>
+        </div>
+        <div class="quick-stat-actions">
+          <button id="btn-quick-playlist" class="btn-quick-stat watch-btn" title="Open Watchlist as a YouTube Binge Playlist">▶ Playlist ↗</button>
+          <button id="btn-quick-copy" class="btn-quick-stat" title="Copy Watch URLs to Clipboard">📋 Copy</button>
         </div>
         <div>
           <span id="stat-progress-text">0 / 0</span>
@@ -1465,6 +1831,48 @@
           <div class="player-section">
             <div id="yt-player-container">
               <div id="yt-player-target"></div>
+            </div>
+
+            <!-- Double-Tap / Hold Gesture Overlay -->
+            <div id="player-gesture-overlay" class="player-gesture-overlay" title="Double tap left/right to seek 10s • Hold for 2x speed • Tap to play/pause">
+              <!-- Left seek ripple animation -->
+              <div id="seek-feedback-left" class="gesture-ripple-box left">
+                <div class="gesture-ripple-content">
+                  <span class="gesture-arrow">⏪</span>
+                  <span class="gesture-label">10s</span>
+                </div>
+              </div>
+
+              <!-- Center play/pause flash animation -->
+              <div id="play-feedback-center" class="gesture-center-flash">
+                <span id="center-flash-icon">▶</span>
+              </div>
+
+              <!-- 2x Speed Hold Badge -->
+              <div id="speed-hold-badge" class="speed-hold-badge" style="display:none;">
+                <span class="speed-badge-dot"></span>
+                <span>2X Fast Forward ▶▶</span>
+              </div>
+
+              <!-- Right seek ripple animation -->
+              <div id="seek-feedback-right" class="gesture-ripple-box right">
+                <div class="gesture-ripple-content">
+                  <span class="gesture-arrow">⏩</span>
+                  <span class="gesture-label">10s</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auto-Advance on Episode End Countdown Pill -->
+            <div id="auto-advance-pill" class="auto-advance-pill" style="display:none;">
+              <div class="advance-pill-text">
+                <span class="advance-check">✓</span>
+                <span>Watched • Next in <strong id="advance-count-sec">3</strong>s</span>
+              </div>
+              <div class="advance-pill-btns">
+                <button id="btn-advance-now" class="advance-btn primary" title="Next episode now">Next ▶</button>
+                <button id="btn-advance-cancel" class="advance-btn" title="Stay on this episode">Cancel</button>
+              </div>
             </div>
 
             <!-- Thumbnail Placeholder / Tap-to-play overlay if autoplay blocked -->
@@ -1565,6 +1973,18 @@
         </div>
       </div>
     </main>
+
+    <!-- Floating Bottom Undo Pill (Instant Thumb Access) -->
+    <div id="floating-undo-pill" class="floating-undo-pill" style="display:none;" role="status">
+      <div class="floating-undo-msg">
+        <span class="undo-dot" id="floating-undo-dot"></span>
+        <span>Sorted to <strong id="floating-undo-cat">Watch</strong></span>
+      </div>
+      <button id="btn-floating-undo" class="floating-undo-btn" title="Undo decision">
+        <svg viewBox="0 0 24 24"><path d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/></svg>
+        <span>Undo</span>
+      </button>
+    </div>
 
     <!-- 4. BOTTOM CLASSIFICATION CONTROLS (Always Accessible Thumb Buttons >= 56px) -->
     <footer class="action-controls-bar">
@@ -1759,8 +2179,19 @@
 
         <div class="sheet-body">
 
+          <!-- Section: Instant YouTube Binge Playlist & Copy -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px;">1. Binge Watchlist & Instant Actions</div>
+          <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button id="btn-modal-open-playlist" class="btn-large primary" style="flex:1; min-width:180px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <span>▶ Open Watch Playlist in YouTube ↗</span>
+            </button>
+            <button id="btn-modal-copy-urls" class="btn-large" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <span>📋 Copy Watch URLs</span>
+            </button>
+          </div>
+
           <!-- Section: CSV Exports -->
-          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px;">1. CSV File Exports</div>
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px;">2. CSV File Exports</div>
           <div class="export-grid">
             <!-- Watch CSV -->
             <div class="export-card">
@@ -1795,7 +2226,7 @@
           </button>
 
           <!-- Section: Backup & Restore -->
-          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">2. Full Session Backup & Restore</div>
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">3. Full Session Backup & Restore</div>
           <div style="display:flex; gap:8px;">
             <button id="btn-export-json" class="btn-large" style="flex:1;">Export JSON</button>
             <label class="btn-large" style="flex:1; cursor:pointer;">
@@ -1805,7 +2236,29 @@
           </div>
 
           <!-- Section: Settings & Mobile Toggles -->
-          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">3. Mobile Preferences</div>
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">4. Mobile Preferences & Auto-Advance</div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Auto-Advance on Episode End</div>
+              <div class="toggle-desc">Automatically sorts to Watch and advances when episode finishes</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-auto-advance" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">AMOLED Pure Black Theme</div>
+              <div class="toggle-desc">Pure #000000 black for OLED screens & battery saving</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-amoled">
+              <span class="slider"></span>
+            </label>
+          </div>
 
           <div class="toggle-row">
             <div class="toggle-info">
@@ -2181,6 +2634,8 @@
       autoplayEnabled: true,    // Auto-plays videos on load and card advance
       aspectRatioMode: "vertical", // 'vertical' (9:16), 'standard' (16:9), 'auto'
       muteAutoplay: false,
+      autoAdvanceEnabled: true, // Automatically sorts to Watch & advances on episode end
+      amoledEnabled: false,     // AMOLED true black theme mode
       swipeThreshold: 50,       // Pixels to trigger swipe decision (fast & responsive)
       wakeLockSentinel: null,
       ytPlayer: null,
@@ -2248,6 +2703,8 @@
     }
 
     let autoplayRetryTimer = null;
+    let autoAdvanceTimer = null;
+    let autoAdvanceSecondsLeft = 3;
 
     function onPlayerStateChange(event) {
       State.currentPlaybackState = event.data;
@@ -2258,6 +2715,7 @@
         if (playBtn) playBtn.textContent = "Pause";
         if (thumbOverlay) thumbOverlay.classList.add("hidden");
         hidePlayerError();
+        cancelAutoAdvanceCountdown();
         if (autoplayRetryTimer) {
           clearTimeout(autoplayRetryTimer);
           autoplayRetryTimer = null;
@@ -2267,12 +2725,289 @@
         }
       } else if (event.data === YT.PlayerState.PAUSED) {
         if (playBtn) playBtn.textContent = "Play";
+        cancelAutoAdvanceCountdown();
       } else if (event.data === YT.PlayerState.ENDED) {
         if (playBtn) playBtn.textContent = "Replay";
+        startAutoAdvanceCountdown();
       } else if (event.data === YT.PlayerState.BUFFERING) {
         hidePlayerError();
+        cancelAutoAdvanceCountdown();
         if (thumbOverlay) thumbOverlay.classList.add("hidden");
       }
+    }
+
+    // --- Auto-Advance Countdown ---
+    function startAutoAdvanceCountdown() {
+      if (!State.autoAdvanceEnabled) return;
+      if (State.queue.length === 0 || State.queueIndex >= State.queue.length) return;
+
+      const pill = document.getElementById("auto-advance-pill");
+      const countEl = document.getElementById("advance-count-sec");
+      if (!pill || !countEl) return;
+
+      autoAdvanceSecondsLeft = 3;
+      countEl.textContent = autoAdvanceSecondsLeft;
+      pill.style.display = "flex";
+
+      if (autoAdvanceTimer) clearInterval(autoAdvanceTimer);
+      autoAdvanceTimer = setInterval(() => {
+        autoAdvanceSecondsLeft--;
+        if (autoAdvanceSecondsLeft > 0) {
+          countEl.textContent = autoAdvanceSecondsLeft;
+        } else {
+          cancelAutoAdvanceCountdown();
+          classifyCurrentVideo("watch", "right");
+        }
+      }, 1000);
+    }
+
+    function cancelAutoAdvanceCountdown() {
+      if (autoAdvanceTimer) {
+        clearInterval(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+      }
+      const pill = document.getElementById("auto-advance-pill");
+      if (pill) pill.style.display = "none";
+    }
+
+    // --- Floating Bottom Undo Pill ---
+    let floatingUndoTimer = null;
+
+    function showFloatingUndoPill(category) {
+      const pill = document.getElementById("floating-undo-pill");
+      const dot = document.getElementById("floating-undo-dot");
+      const catText = document.getElementById("floating-undo-cat");
+      if (!pill || !dot || !catText) return;
+
+      if (floatingUndoTimer) {
+        clearTimeout(floatingUndoTimer);
+        floatingUndoTimer = null;
+      }
+
+      const catLabel = category === "watch" ? "Watch" : (category === "avoid" ? "Avoid" : "Archive");
+      catText.textContent = catLabel;
+      dot.className = `undo-dot ${category}`;
+
+      pill.style.display = "flex";
+      pill.style.opacity = "1";
+      pill.style.transform = "translateX(-50%) translateY(0)";
+
+      floatingUndoTimer = setTimeout(() => {
+        hideFloatingUndoPill();
+      }, 4200);
+    }
+
+    function hideFloatingUndoPill() {
+      const pill = document.getElementById("floating-undo-pill");
+      if (!pill) return;
+      pill.style.opacity = "0";
+      pill.style.transform = "translateX(-50%) translateY(15px)";
+      setTimeout(() => {
+        pill.style.display = "none";
+      }, 250);
+      if (floatingUndoTimer) {
+        clearTimeout(floatingUndoTimer);
+        floatingUndoTimer = null;
+      }
+    }
+
+    // --- AMOLED True Black Theme Mode ---
+    function setAmoledTheme(enabled) {
+      State.amoledEnabled = !!enabled;
+      dbSetSetting("amoled_theme", !!enabled);
+      if (enabled) {
+        document.body.classList.add("theme-amoled");
+      } else {
+        document.body.classList.remove("theme-amoled");
+      }
+      const toggle = document.getElementById("toggle-amoled");
+      if (toggle) toggle.checked = !!enabled;
+      const btn = document.getElementById("btn-toggle-amoled");
+      if (btn) {
+        btn.classList.toggle("active-tool", !!enabled);
+        btn.title = enabled ? "AMOLED True Black is ON (Click to toggle)" : "AMOLED True Black is OFF (Click to toggle)";
+      }
+    }
+
+    // --- Binge YouTube Playlist & Clipboard Tools ---
+    function openWatchPlaylist() {
+      const watchVideos = State.allVideos.filter(v => v.classification === "watch");
+      if (watchVideos.length === 0) {
+        showToast("No videos in Watch list yet! Swipe right to add.");
+        return;
+      }
+      const ids = watchVideos.map(v => v.id).slice(0, 50);
+      const url = `https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`;
+      window.open(url, "_blank", "noopener");
+      showToast(`Opening YouTube playlist with ${ids.length} videos! ↗`);
+      triggerHaptic();
+    }
+
+    async function copyWatchUrlsToClipboard() {
+      const watchVideos = State.allVideos.filter(v => v.classification === "watch");
+      if (watchVideos.length === 0) {
+        showToast("No videos in Watch list yet! Swipe right to add.");
+        return;
+      }
+      const text = watchVideos.map(v => `https://www.youtube.com/watch?v=${v.id}`).join("\n");
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(`Copied ${watchVideos.length} Watch URLs to clipboard! 📋`);
+        triggerHaptic();
+      } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToast(`Copied ${watchVideos.length} Watch URLs to clipboard! 📋`);
+        triggerHaptic();
+      }
+    }
+
+    // --- Player Video Gestures (Double-tap to seek, hold for 2x, tap to play/pause) ---
+    let lastTapTime = 0;
+    let lastTapX = 0;
+    let singleTapTimeout = null;
+    let holdSpeedTimeout = null;
+    let isHolding2x = false;
+    let speedBeforeHold = 1;
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    function setupPlayerGestures() {
+      const overlay = document.getElementById("player-gesture-overlay");
+      if (!overlay) return;
+
+      overlay.addEventListener("pointerdown", (e) => {
+        if (!State.ytPlayer) return;
+        touchStartX = e.clientX;
+        touchStartY = e.clientY;
+
+        // Long press detection for 2.0x playback speed
+        holdSpeedTimeout = setTimeout(() => {
+          isHolding2x = true;
+          try {
+            speedBeforeHold = (State.ytPlayer.getPlaybackRate && State.ytPlayer.getPlaybackRate()) || 1;
+            State.ytPlayer.setPlaybackRate(2);
+            const badge = document.getElementById("speed-hold-badge");
+            if (badge) badge.style.display = "flex";
+            triggerHaptic();
+          } catch (err) {
+            console.warn("2x speed error:", err);
+          }
+        }, 320);
+      });
+
+      overlay.addEventListener("pointermove", (e) => {
+        const dist = Math.hypot(e.clientX - touchStartX, e.clientY - touchStartY);
+        if (dist > 15) {
+          if (holdSpeedTimeout) {
+            clearTimeout(holdSpeedTimeout);
+            holdSpeedTimeout = null;
+          }
+        }
+      });
+
+      const cancelOrEndHold = (e) => {
+        if (holdSpeedTimeout) {
+          clearTimeout(holdSpeedTimeout);
+          holdSpeedTimeout = null;
+        }
+
+        if (isHolding2x) {
+          isHolding2x = false;
+          const badge = document.getElementById("speed-hold-badge");
+          if (badge) badge.style.display = "none";
+          try {
+            if (State.ytPlayer && State.ytPlayer.setPlaybackRate) {
+              State.ytPlayer.setPlaybackRate(speedBeforeHold || 1);
+            }
+          } catch (err) {}
+          return true;
+        }
+        return false;
+      };
+
+      overlay.addEventListener("pointercancel", cancelOrEndHold);
+
+      overlay.addEventListener("pointerup", (e) => {
+        if (cancelOrEndHold(e)) {
+          return; // Was press-and-hold
+        }
+
+        const now = Date.now();
+        const rect = overlay.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const isLeftZone = relX < rect.width * 0.45;
+        const isRightZone = relX > rect.width * 0.55;
+
+        // Double-Tap Detection (<280ms between taps)
+        if (now - lastTapTime < 280 && Math.abs(e.clientX - lastTapX) < 50) {
+          if (singleTapTimeout) {
+            clearTimeout(singleTapTimeout);
+            singleTapTimeout = null;
+          }
+          lastTapTime = 0;
+
+          if (isLeftZone) {
+            // Seek -10s
+            if (State.ytPlayer && State.ytPlayer.getCurrentTime) {
+              const cur = State.ytPlayer.getCurrentTime();
+              State.ytPlayer.seekTo(Math.max(0, cur - 10), true);
+            }
+            triggerSeekAnimation("left");
+            triggerHaptic();
+          } else {
+            // Seek +10s (Right or Center double-tap)
+            if (State.ytPlayer && State.ytPlayer.getCurrentTime) {
+              const cur = State.ytPlayer.getCurrentTime();
+              State.ytPlayer.seekTo(cur + 10, true);
+            }
+            triggerSeekAnimation("right");
+            triggerHaptic();
+          }
+        } else {
+          // Single tap pending (wait 250ms to ensure not double-tap)
+          lastTapTime = now;
+          lastTapX = e.clientX;
+
+          singleTapTimeout = setTimeout(() => {
+            if (!State.ytPlayer) return;
+            if (State.currentPlaybackState === YT.PlayerState.PLAYING) {
+              State.ytPlayer.pauseVideo();
+              triggerPlayFlash("⏸");
+            } else {
+              const thumbOverlay = document.getElementById("player-thumb-overlay");
+              if (thumbOverlay) thumbOverlay.classList.add("hidden");
+              if (State.ytPlayer.unMute && !State.muteAutoplay) State.ytPlayer.unMute();
+              State.ytPlayer.playVideo();
+              triggerPlayFlash("▶");
+            }
+          }, 250);
+        }
+      });
+    }
+
+    function triggerSeekAnimation(side) {
+      const el = document.getElementById(side === "left" ? "seek-feedback-left" : "seek-feedback-right");
+      if (!el) return;
+      el.classList.remove("animate-ripple");
+      void el.offsetWidth;
+      el.classList.add("animate-ripple");
+    }
+
+    function triggerPlayFlash(icon) {
+      const el = document.getElementById("play-feedback-center");
+      const iconEl = document.getElementById("center-flash-icon");
+      if (!el || !iconEl) return;
+      iconEl.textContent = icon;
+      el.classList.remove("animate-flash");
+      void el.offsetWidth;
+      el.classList.add("animate-flash");
     }
 
     function onPlayerError(event) {
@@ -2596,6 +3331,9 @@
       if (State.isClassifying) return;
       if (!State.currentVideo) return;
 
+      // Cancel any ongoing auto-advance countdown if user manually classifies
+      cancelAutoAdvanceCountdown();
+
       State.isClassifying = true;
       const video = State.currentVideo;
       const prevClassification = video.classification || "unsorted";
@@ -2628,6 +3366,9 @@
       // 5. Update counts & advance
       updateStats();
 
+      // Show floating bottom undo pill for one-handed thumb ergonomics
+      showFloatingUndoPill(category);
+
       // If we are reviewing unsorted, remove video from queue
       if (State.filterMode === "unsorted") {
         State.queue.splice(State.queueIndex, 1);
@@ -2650,6 +3391,7 @@
 
     async function undoLastDecision() {
       if (State.undoStack.length === 0) return;
+      hideFloatingUndoPill();
       const item = State.undoStack.pop();
 
       const video = State.allVideos.find(v => v.id === item.videoId);
@@ -2744,7 +3486,7 @@
 
     function isInteractiveTarget(target) {
       if (!target) return false;
-      return !!target.closest("button, select, a, input, textarea, #yt-player-container, #yt-player-target, .player-tools-bar, .player-play-btn, .tool-btn");
+      return !!target.closest("button, select, a, input, textarea, #yt-player-container, #yt-player-target, .player-tools-bar, .player-play-btn, .tool-btn, #player-gesture-overlay, .player-gesture-overlay, #auto-advance-pill, .auto-advance-pill, #floating-undo-pill, .floating-undo-pill");
     }
 
     function setupGestures() {
@@ -3724,6 +4466,78 @@
         });
       }
 
+      // Settings: AMOLED Pure Black toggle
+      const toggleAmoled = document.getElementById("toggle-amoled");
+      if (toggleAmoled) {
+        toggleAmoled.addEventListener("change", (e) => {
+          setAmoledTheme(e.target.checked);
+          showToast(e.target.checked ? "AMOLED True Black enabled" : "Standard theme restored");
+        });
+      }
+
+      // Header AMOLED Quick Toggle
+      const btnToggleAmoled = document.getElementById("btn-toggle-amoled");
+      if (btnToggleAmoled) {
+        btnToggleAmoled.addEventListener("click", () => {
+          setAmoledTheme(!State.amoledEnabled);
+          showToast(State.amoledEnabled ? "AMOLED True Black enabled" : "Standard theme restored");
+        });
+      }
+
+      // Settings: Auto-advance countdown toggle
+      const toggleAutoAdv = document.getElementById("toggle-auto-advance");
+      if (toggleAutoAdv) {
+        toggleAutoAdv.addEventListener("change", (e) => {
+          State.autoAdvanceEnabled = e.target.checked;
+          dbSetSetting("auto_advance_enabled", e.target.checked);
+          showToast(e.target.checked ? "Auto-advance enabled" : "Auto-advance disabled");
+        });
+      }
+
+      // Auto-advance Countdown Pill Actions
+      const btnAdvanceNow = document.getElementById("btn-advance-now");
+      if (btnAdvanceNow) {
+        btnAdvanceNow.addEventListener("click", () => {
+          cancelAutoAdvanceCountdown();
+          classifyCurrentVideo("watch", "right");
+        });
+      }
+
+      const btnAdvanceCancel = document.getElementById("btn-advance-cancel");
+      if (btnAdvanceCancel) {
+        btnAdvanceCancel.addEventListener("click", () => {
+          cancelAutoAdvanceCountdown();
+          showToast("Auto-advance cancelled for this episode");
+        });
+      }
+
+      // Floating Bottom Undo Pill Action
+      const btnFloatingUndo = document.getElementById("btn-floating-undo");
+      if (btnFloatingUndo) {
+        btnFloatingUndo.addEventListener("click", () => {
+          undoLastDecision();
+        });
+      }
+
+      // Binge Playlist & Copy URLs Actions
+      const btnQuickPlaylist = document.getElementById("btn-quick-playlist");
+      if (btnQuickPlaylist) {
+        btnQuickPlaylist.addEventListener("click", openWatchPlaylist);
+      }
+      const btnModalOpenPlaylist = document.getElementById("btn-modal-open-playlist");
+      if (btnModalOpenPlaylist) {
+        btnModalOpenPlaylist.addEventListener("click", openWatchPlaylist);
+      }
+
+      const btnQuickCopy = document.getElementById("btn-quick-copy");
+      if (btnQuickCopy) {
+        btnQuickCopy.addEventListener("click", copyWatchUrlsToClipboard);
+      }
+      const btnModalCopyUrls = document.getElementById("btn-modal-copy-urls");
+      if (btnModalCopyUrls) {
+        btnModalCopyUrls.addEventListener("click", copyWatchUrlsToClipboard);
+      }
+
       // Clear all data
       document.getElementById("btn-clear-all-data").addEventListener("click", async () => {
         if (confirm("Are you sure you want to delete all saved videos, classifications, and local data? This cannot be undone.")) {
@@ -3778,6 +4592,7 @@
        ========================================================================== */
     async function initApp() {
       setupGestures();
+      setupPlayerGestures();
       setupEventListeners();
 
       // Check if opened via local file scheme (content:// or file://)
@@ -3816,6 +4631,14 @@
 
         const aspect = await dbGetSetting("aspect_ratio_mode", "vertical");
         State.aspectRatioMode = aspect;
+
+        const autoAdvance = await dbGetSetting("auto_advance_enabled", true);
+        State.autoAdvanceEnabled = autoAdvance;
+        const toggleAutoAdvInput = document.getElementById("toggle-auto-advance");
+        if (toggleAutoAdvInput) toggleAutoAdvInput.checked = autoAdvance;
+
+        const amoled = await dbGetSetting("amoled_theme", false);
+        setAmoledTheme(amoled);
 
         updateAutoplayUI();
         updateCardAspectRatio();
