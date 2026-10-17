@@ -47,7 +47,21 @@ Built as a single self-contained application using HTML5, CSS3, Vanilla JavaScri
 
 ---
 
-## 🛠️ Local Development
+## 🧩 Install as a Chrome / Brave / Edge Extension
+
+You can run **YouTube Swipe Sorter** directly inside Chrome's native **Side Panel** right alongside YouTube, complete with a **1-click video scraper** that extracts videos from any YouTube page without requiring an API key!
+
+### Quick 30-Second Setup:
+1. Open Chrome, Brave, or Edge and navigate to `chrome://extensions`.
+2. Toggle on **Developer mode** in the top-right corner.
+3. Click **Load unpacked** in the top-left corner.
+4. Select this project folder (`URL Sorter`).
+5. Open any YouTube page (search results, a channel's videos, shorts, or a playlist).
+6. Click the **YouTube Swipe Sorter** puzzle/action icon in your browser toolbar (or the floating `⚡ Swipe Sorter` pill on YouTube) — the side panel opens immediately and you can click **⚡ Scan Tab** to import all videos on screen in one tap!
+
+---
+
+## 🛠️ Local Development (Web App)
 
 Run with any simple HTTP server:
 

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>YouTube Swipe Sorter</title>
+  <meta name="description" content="Mobile-first YouTube video swipe sorter. Rapidly review channel backlogs and classify videos into Watch, Archive, or Avoid.">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23ff0033%22/><polygon points=%2240,30 75,50 40,70%22 fill=%22white%22/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app-root">
+
+    <!-- 1. HEADER -->
+    <header class="app-header">
+      <div class="brand-group">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20"></polygon></svg>
+        </div>
+        <div class="brand-title">Swipe Sorter</div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-import-active-tab" class="btn-import-tab-quick" title="Scan and import all videos from currently active YouTube tab">⚡ Scan Tab</button>
+        <!-- Undo Button -->
+        <button id="btn-undo" class="icon-btn" title="Undo last decision (Z)" disabled aria-label="Undo">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/>
+          </svg>
+        </button>
+
+        <!-- Queue & Filter Drawer Button -->
+        <button id="btn-open-queue" class="icon-btn" title="Queue & Filter" aria-label="Queue list">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/>
+          </svg>
+          <span id="queue-badge" class="badge-counter" style="display:none;">0</span>
+        </button>
+
+        <!-- AMOLED Pure Black Toggle -->
+        <button id="btn-toggle-amoled" class="icon-btn" title="Toggle AMOLED True Black Theme (OLED)" aria-label="AMOLED Theme">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
+        <!-- Main Menu / Secondary Options Button -->
+        <button id="btn-open-menu" class="icon-btn" title="Menu & Export" aria-label="Menu">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- LOCAL FILE / ORIGIN WARNING BANNER (Shown if opened via content:// or file://) -->
+    <div id="banner-local-file" style="display:none; background: linear-gradient(90deg, #9a3412, #c2410c); color:#fff; padding:7px 12px; font-size:11px; font-weight:600; align-items:center; justify-content:space-between; z-index:25; gap:6px; border-bottom:1px solid rgba(255,255,255,0.15);">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:13px;">⚠️</span>
+        <span>Opened via <code>content://</code> / <code>file://</code>. YouTube blocks embeds without HTTP.</span>
+      </div>
+      <button id="btn-fix-local-origin" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.4); color:#fff; border-radius:4px; padding:3px 8px; font-size:10px; font-weight:700; cursor:pointer; white-space:nowrap;">How to Fix</button>
+    </div>
+
+    <!-- 2. PROGRESS STATS BAR -->
+    <div class="progress-bar-container">
+      <div class="progress-stats-row">
+        <div class="progress-pill-group">
+          <span class="pill-stat"><span class="pill-dot watch"></span><span id="stat-watch">0</span></span>
+          <span class="pill-stat"><span class="pill-dot archive"></span><span id="stat-archive">0</span></span>
+          <span class="pill-stat"><span class="pill-dot avoid"></span><span id="stat-avoid">0</span></span>
+        </div>
+        <div class="quick-stat-actions">
+          <button id="btn-quick-playlist" class="btn-quick-stat watch-btn" title="Open Watchlist as a YouTube Binge Playlist">▶ Playlist ↗</button>
+          <button id="btn-quick-copy" class="btn-quick-stat" title="Copy Watch URLs to Clipboard">📋 Copy</button>
+        </div>
+        <div>
+          <span id="stat-progress-text">0 / 0</span>
+          <span id="stat-percent" style="color:var(--text-muted); margin-left:4px;">(0%)</span>
+        </div>
+      </div>
+      <div class="track-line">
+        <div id="track-watch" class="track-seg watch" style="width: 0%"></div>
+        <div id="track-archive" class="track-seg archive" style="width: 0%"></div>
+        <div id="track-avoid" class="track-seg avoid" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- 3. MAIN SWIPE STAGE -->
+    <main id="stage">
+      <div class="card-stack">
+
+        <!-- Behind Preview Card for Smooth Queue Pop -->
+        <div id="preview-card" class="preview-card">
+          <img id="preview-thumb" class="preview-card-img" src="" alt="Next Video Thumbnail">
+          <div class="preview-card-info">
+            <div id="preview-title" style="font-weight:700; font-size:13px; color:var(--text-secondary);">-</div>
+            <div id="preview-channel" style="font-size:11px; color:var(--text-muted);">-</div>
+          </div>
+        </div>
+
+        <!-- Active Swipe Card -->
+        <div id="active-card" class="swipe-card">
+
+          <!-- Stamps for Drag Visual Indication -->
+          <div id="stamp-watch" class="stamp-badge stamp-watch">WATCH</div>
+          <div id="stamp-avoid" class="stamp-badge stamp-avoid">AVOID</div>
+          <div id="stamp-archive" class="stamp-badge stamp-archive">ARCHIVE</div>
+
+          <!-- Video Player Container (Fixed & Isolated from Gesture Layer) -->
+          <div class="player-section">
+            <div id="yt-player-container">
+              <div id="yt-player-target"></div>
+            </div>
+
+            <!-- Double-Tap / Hold Gesture Overlay -->
+            <div id="player-gesture-overlay" class="player-gesture-overlay" title="Double tap left/right to seek 10s • Hold for 2x speed • Tap to play/pause">
+              <!-- Left seek ripple animation -->
+              <div id="seek-feedback-left" class="gesture-ripple-box left">
+                <div class="gesture-ripple-content">
+                  <span class="gesture-arrow">⏪</span>
+                  <span class="gesture-label">10s</span>
+                </div>
+              </div>
+
+              <!-- Center play/pause flash animation -->
+              <div id="play-feedback-center" class="gesture-center-flash">
+                <span id="center-flash-icon">▶</span>
+              </div>
+
+              <!-- 2x Speed Hold Badge -->
+              <div id="speed-hold-badge" class="speed-hold-badge" style="display:none;">
+                <span class="speed-badge-dot"></span>
+                <span>2X Fast Forward ▶▶</span>
+              </div>
+
+              <!-- Right seek ripple animation -->
+              <div id="seek-feedback-right" class="gesture-ripple-box right">
+                <div class="gesture-ripple-content">
+                  <span class="gesture-arrow">⏩</span>
+                  <span class="gesture-label">10s</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auto-Advance on Episode End Countdown Pill -->
+            <div id="auto-advance-pill" class="auto-advance-pill" style="display:none;">
+              <div class="advance-pill-text">
+                <span class="advance-check">✓</span>
+                <span>Watched • Next in <strong id="advance-count-sec">3</strong>s</span>
+              </div>
+              <div class="advance-pill-btns">
+                <button id="btn-advance-now" class="advance-btn primary" title="Next episode now">Next ▶</button>
+                <button id="btn-advance-cancel" class="advance-btn" title="Stay on this episode">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Thumbnail Placeholder / Tap-to-play overlay if autoplay blocked -->
+            <div id="player-thumb-overlay" class="player-thumb-fallback">
+              <button id="btn-manual-play" class="player-play-btn" title="Play Video" aria-label="Play">
+                <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20"></polygon></svg>
+              </button>
+            </div>
+
+            <!-- Unmute Banner Pill (If browser policy initially forced muted playback) -->
+            <button id="banner-unmute-prompt" class="unmute-banner-pill" style="display:none;" title="Tap to unmute audio">
+              <svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+              <span>Tap to Unmute 🔊</span>
+            </button>
+
+            <!-- Player Error Banner (Handles 100/101/150 embedding restrictions gracefully) -->
+            <div id="player-error-banner" class="player-error-overlay" style="display:none;">
+              <svg class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <div class="error-msg-title" id="error-title">Embedding Unavailable</div>
+              <div class="error-msg-sub" id="error-desc">This video owner disabled embeds or it is age-restricted. You can still open it in YouTube or sort it.</div>
+              <div class="error-actions">
+                <button id="btn-err-open-yt" class="btn-sm primary">Open in YouTube ↗</button>
+                <button id="btn-err-retry" class="btn-sm">Retry</button>
+                <button id="btn-err-skip" class="btn-sm">Skip</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Player Tools (Timeline seek, speed, autoplay & vertical mode) -->
+          <div class="player-tools-bar">
+            <div class="player-tools-group">
+              <button id="btn-toggle-play" class="tool-btn" title="Play/Pause (Space)">Play</button>
+              <button id="btn-seek-back" class="tool-btn" title="Seek -10s">-10s</button>
+              <button id="btn-seek-fwd" class="tool-btn" title="Seek +10s">+10s</button>
+              <button id="btn-toggle-autoplay" class="tool-btn active-tool" title="Autoplay: Videos play automatically on advance">
+                <span class="tool-dot active"></span>Auto
+              </button>
+            </div>
+            <div class="player-tools-group">
+              <button id="btn-toggle-aspect" class="tool-btn active-tool" title="Toggle Aspect Ratio: Vertical Drama (9:16) / Standard (16:9)">
+                <span id="aspect-label">📱 9:16</span>
+              </button>
+              <select id="select-speed" class="speed-select" title="Playback Speed">
+                <option value="1">1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="1.75">1.75x</option>
+                <option value="2">2.0x</option>
+              </select>
+              <button id="btn-open-external-yt" class="tool-btn" title="Open in YouTube">
+                <span>YT</span>↗
+              </button>
+            </div>
+          </div>
+
+          <!-- Card Body: Metadata -->
+          <div class="card-body">
+            <div id="card-video-title" class="video-title">Loading queue...</div>
+            <div class="video-meta-row">
+              <span id="card-channel-name" class="channel-name">-</span>
+              <div class="video-badges">
+                <span id="card-duration" class="meta-badge">--:--</span>
+                <span id="card-date" class="meta-badge">--/--/--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEDICATED SWIPE HANDLE & GESTURE ZONE (Guarantees scrubbing native timeline never triggers classification) -->
+          <div id="swipe-handle" class="swipe-zone-handle" title="Drag left, right, or down to sort">
+            <div class="swipe-hint-text">
+              <span class="avoid-t">◀ Avoid</span>
+              <span>•</span>
+              <span class="arch-t">▼ Archive</span>
+              <span>•</span>
+              <span class="watch-t">Watch ▶</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- EMPTY STATE / ALL SORTED SCREEN -->
+      <div id="empty-state" class="empty-state-view">
+        <div class="empty-icon-ring">
+          <svg style="width:36px; height:36px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <div class="empty-title">Queue Processed!</div>
+        <div id="empty-state-msg" class="empty-desc">You have reviewed all unsorted videos in this backlog. Export your CSVs or import more videos below.</div>
+        <div class="empty-btn-group">
+          <button id="btn-empty-export-all" class="btn-large primary">Export All CSVs</button>
+          <button id="btn-empty-review-all" class="btn-large">Review All Classified</button>
+          <button id="btn-empty-import-tab" class="btn-large primary" style="border-color:var(--color-avoid); background:linear-gradient(135deg, #e11d48, #be123c);">⚡ Scan Active YouTube Tab</button>
+          <button id="btn-empty-import" class="btn-large">Import More Videos</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Floating Bottom Undo Pill (Instant Thumb Access) -->
+    <div id="floating-undo-pill" class="floating-undo-pill" style="display:none;" role="status">
+      <div class="floating-undo-msg">
+        <span class="undo-dot" id="floating-undo-dot"></span>
+        <span>Sorted to <strong id="floating-undo-cat">Watch</strong></span>
+      </div>
+      <button id="btn-floating-undo" class="floating-undo-btn" title="Undo decision">
+        <svg viewBox="0 0 24 24"><path d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/></svg>
+        <span>Undo</span>
+      </button>
+    </div>
+
+    <!-- 4. BOTTOM CLASSIFICATION CONTROLS (Always Accessible Thumb Buttons >= 56px) -->
+    <footer class="action-controls-bar">
+      <!-- AVOID (Left) -->
+      <button id="btn-action-avoid" class="decision-btn btn-avoid" title="Avoid (Left Arrow)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <span class="decision-label">Avoid <span class="key-hint">←</span></span>
+      </button>
+
+      <!-- ARCHIVE (Bottom/Center) -->
+      <button id="btn-action-archive" class="decision-btn btn-archive" title="Archive (Down Arrow)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+        </svg>
+        <span class="decision-label">Archive <span class="key-hint">↓</span></span>
+      </button>
+
+      <!-- WATCH (Right) -->
+      <button id="btn-action-watch" class="decision-btn btn-watch" title="Watch (Right Arrow)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span class="decision-label">Watch <span class="key-hint">→</span></span>
+      </button>
+    </footer>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" role="status" aria-live="polite">Notification</div>
+
+    <!-- ==========================================================================
+         MODAL 1: IMPORT VIDEOS
+         ========================================================================== -->
+    <div id="modal-import" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="sheet-handle-pill"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">
+            <svg style="width:20px;height:20px;color:var(--color-brand);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Import Videos
+          </div>
+          <button class="icon-btn btn-close-modal" aria-label="Close">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="sheet-body">
+          <!-- Tab Navigation -->
+          <div class="tab-bar">
+            <button id="tab-import-urls" class="tab-btn">Paste URLs / Files (No API Key)</button>
+            <button id="tab-import-channel" class="tab-btn">YouTube Channel (API Key)</button>
+          </div>
+
+          
+          <!-- TAB CONTENT 0: Active YouTube Tab Scraper -->
+          <div id="panel-import-active" class="tab-panel" style="display:block;">
+            <div style="background:rgba(225, 29, 72, 0.12); border:1px solid rgba(225, 29, 72, 0.35); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px; text-align:center;">
+              <div style="font-size:26px; margin-bottom:6px;">⚡</div>
+              <div style="font-weight:700; font-size:14px; color:#fff; margin-bottom:4px;">One-Click YouTube Tab Scraper</div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+                Pulls all video cards, vertical dramas, titles, and thumbnails directly from whatever YouTube search results, channel, shorts, or playlist page you have open!
+              </div>
+              <button id="btn-scan-active-tab" class="btn-large primary" style="width:100%; margin-top:14px; font-weight:700;">
+                ⚡ Scan & Import Videos from YouTube Tab
+              </button>
+            </div>
+            <div style="text-align:center;">
+              <button id="btn-load-demo-data-active" class="btn-large" style="width:100%;" title="Loads a curated queue of high quality videos to test right away">Load Demo Queue Instead</button>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT 1: URLs / CSV / Text -->
+          <div id="panel-import-urls" class="tab-panel" style="display:none;">
+            <div class="form-group">
+              <label class="form-label" for="input-urls">Paste Video URLs, Embeds, or Shorts</label>
+              <textarea id="input-urls" class="form-textarea" placeholder="https://www.youtube.com/watch?v=...&#10;https://youtu.be/...&#10;https://www.youtube.com/shorts/..."></textarea>
+              <div class="form-help">Enter one or more URLs, one per line or separated by commas.</div>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Or upload a .txt / .csv file</label>
+              <input type="file" id="file-import-urls" accept=".txt,.csv" class="form-input">
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button id="btn-parse-urls" class="btn-large primary" style="flex:1;">Import URLs</button>
+              <button id="btn-load-demo-data" class="btn-large" style="flex:1;" title="Loads a curated queue of high quality videos to test right away">Load Demo Queue</button>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT 2: YouTube Channel / Uploads Playlist -->
+          <div id="panel-import-channel" class="tab-panel" style="display:none;">
+            <div class="form-group">
+              <label class="form-label" for="input-api-key">YouTube Data API v3 Key</label>
+              <input type="password" id="input-api-key" class="form-input" placeholder="AIzaSy...">
+              <div class="form-help">
+                Keys remain in your local browser storage and are never sent to any third party.
+                <a href="#guide" id="link-show-api-guide" style="color:var(--color-archive); text-decoration:none;">How to get a free API key?</a>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label" for="input-channel-id">Channel Handle, URL, or Channel ID</label>
+              <input type="text" id="input-channel-id" class="form-input" placeholder="@Veritasium, UC..., or uploads playlist UU...">
+              <div class="form-help">Supports handles (e.g. <strong>@mkbhd</strong>), channel IDs (<strong>UC...</strong>), or playlist IDs.</div>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label" for="input-max-import">Maximum Videos to Fetch</label>
+              <select id="input-max-import" class="form-select">
+                <option value="50">50 videos (Fast)</option>
+                <option value="150" selected>150 videos</option>
+                <option value="500">500 videos</option>
+                <option value="1000">1,000 videos</option>
+                <option value="5000">5,000 videos (Full backlog)</option>
+              </select>
+            </div>
+
+            <!-- Live Progress / Cancel Box -->
+            <div id="import-channel-progress" class="import-live-progress" style="display:none; margin-top:12px;">
+              <div class="import-live-status">
+                <span id="import-status-text">Fetching channel details...</span>
+                <span id="import-status-count">0</span>
+              </div>
+              <div class="track-line">
+                <div id="import-status-bar" class="track-seg watch" style="width: 10%"></div>
+              </div>
+              <button id="btn-cancel-import" class="btn-sm" style="margin-top:6px; align-self:flex-end;">Cancel Import</button>
+            </div>
+
+            <button id="btn-start-channel-import" class="btn-large primary" style="width:100%; margin-top:14px;">Fetch Channel Videos</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODAL 2: QUEUE & FILTER LIST
+         ========================================================================== -->
+    <div id="modal-queue" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="sheet-handle-pill"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">
+            <svg style="width:20px;height:20px;color:var(--color-archive);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            Review Queue (<span id="queue-total-count">0</span>)
+          </div>
+          <button class="icon-btn btn-close-modal" aria-label="Close">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="sheet-body">
+          <!-- Filter & Sort Controls -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select id="select-queue-filter" class="form-select" style="flex:1; min-width:140px;">
+              <option value="unsorted">Unsorted Videos Only</option>
+              <option value="all">All Videos (Everything)</option>
+              <option value="watch">Watch List</option>
+              <option value="archive">Archive List</option>
+              <option value="avoid">Avoid List</option>
+            </select>
+
+            <select id="select-queue-sort" class="form-select" style="flex:1; min-width:140px;">
+              <option value="original">Original Import Order</option>
+              <option value="shuffle">Shuffle / Randomize</option>
+              <option value="newest">Newest Uploaded First</option>
+              <option value="oldest">Oldest Uploaded First</option>
+              <option value="shortest">Shortest Duration First</option>
+              <option value="longest">Longest Duration First</option>
+            </select>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="queue-filter-desc" style="font-size:11px; color:var(--text-muted);">Showing unsorted items</span>
+            <button id="btn-shuffle-quick" class="btn-sm">Shuffle Now</button>
+          </div>
+
+          <!-- Video Items List -->
+          <div id="queue-items-container" class="queue-list-container">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODAL 3: EXPORT, BACKUP & SETTINGS MENU
+         ========================================================================== -->
+    <div id="modal-menu" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="sheet-handle-pill"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">
+            <svg style="width:20px;height:20px;color:#fff;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+            Export & Preferences
+          </div>
+          <button class="icon-btn btn-close-modal" aria-label="Close">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="sheet-body">
+
+          <!-- Section: Instant YouTube Binge Playlist & Copy -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px;">1. Binge Watchlist & Instant Actions</div>
+          <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button id="btn-modal-open-playlist" class="btn-large primary" style="flex:1; min-width:180px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <span>▶ Open Watch Playlist in YouTube ↗</span>
+            </button>
+            <button id="btn-modal-copy-urls" class="btn-large" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <span>📋 Copy Watch URLs</span>
+            </button>
+          </div>
+
+          <!-- Section: CSV Exports -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px;">2. CSV File Exports</div>
+          <div class="export-grid">
+            <!-- Watch CSV -->
+            <div class="export-card">
+              <div class="export-card-info">
+                <div class="export-card-title"><span class="pill-dot watch"></span> Watch List</div>
+                <div class="export-card-sub" id="export-count-watch">0 URLs • watch.csv</div>
+              </div>
+              <button id="btn-export-watch" class="btn-sm primary">Download CSV</button>
+            </div>
+
+            <!-- Archive CSV -->
+            <div class="export-card">
+              <div class="export-card-info">
+                <div class="export-card-title"><span class="pill-dot archive"></span> Archive List</div>
+                <div class="export-card-sub" id="export-count-archive">0 URLs • archive.csv</div>
+              </div>
+              <button id="btn-export-archive" class="btn-sm">Download CSV</button>
+            </div>
+
+            <!-- Avoid CSV -->
+            <div class="export-card">
+              <div class="export-card-info">
+                <div class="export-card-title"><span class="pill-dot avoid"></span> Avoid List</div>
+                <div class="export-card-sub" id="export-count-avoid">0 URLs • avoid.csv</div>
+              </div>
+              <button id="btn-export-avoid" class="btn-sm">Download CSV</button>
+            </div>
+          </div>
+
+          <button id="btn-export-all-csv" class="btn-large" style="width:100%; border-color:var(--border-focus);">
+            Export All 3 CSV Files Sequentially
+          </button>
+
+          <!-- Section: Backup & Restore -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">3. Full Session Backup & Restore</div>
+          <div style="display:flex; gap:8px;">
+            <button id="btn-export-json" class="btn-large" style="flex:1;">Export JSON</button>
+            <label class="btn-large" style="flex:1; cursor:pointer;">
+              Restore JSON
+              <input type="file" id="file-restore-json" accept=".json" style="display:none;">
+            </label>
+          </div>
+
+          <!-- Section: Settings & Mobile Toggles -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">4. Mobile Preferences & Auto-Advance</div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Auto-Advance on Episode End</div>
+              <div class="toggle-desc">Automatically sorts to Watch and advances when episode finishes</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-auto-advance" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">AMOLED Pure Black Theme</div>
+              <div class="toggle-desc">Pure #000000 black for OLED screens & battery saving</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-amoled">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Haptic Feedback</div>
+              <div class="toggle-desc">Vibrate phone lightly upon classification</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-haptic" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Keep Screen Awake</div>
+              <div class="toggle-desc">Prevent screen timeout using Screen Wake Lock API</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-wakelock" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Auto-Play Videos</div>
+              <div class="toggle-desc">Automatically start video playback on advance without pressing play</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-autoplay" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Player Aspect Ratio</div>
+              <div class="toggle-desc">Optimized for vertical dramas & shorts or standard landscape</div>
+            </div>
+            <select id="select-aspect-ratio" class="speed-select" style="padding: 6px 10px; font-size: 12px;">
+              <option value="vertical">📱 Vertical Drama (9:16)</option>
+              <option value="auto">⚡ Auto-Detect</option>
+              <option value="standard">🖥️ Standard Landscape (16:9)</option>
+            </select>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Mute Autoplay on Advance</div>
+              <div class="toggle-desc">Start playback silently until unmuted</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-mute-autoplay">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Keyboard Shortcuts Reference -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">Keyboard Shortcuts (Desktop)</div>
+          <div class="shortcuts-box">
+            <div class="shortcut-item"><span>Watch (Swipe Right)</span><kbd>→</kbd></div>
+            <div class="shortcut-item"><span>Avoid (Swipe Left)</span><kbd>←</kbd></div>
+            <div class="shortcut-item"><span>Archive (Swipe Down)</span><kbd>↓</kbd></div>
+            <div class="shortcut-item"><span>Undo Last Decision</span><kbd>Z</kbd></div>
+            <div class="shortcut-item"><span>Play / Pause</span><kbd>Space</kbd></div>
+            <div class="shortcut-item"><span>Seek -10s / +10s</span><kbd>J</kbd> / <kbd>L</kbd></div>
+          </div>
+
+          <!-- Section: Storage Management -->
+          <div class="form-label" style="text-transform:uppercase; letter-spacing:0.05em; font-size:11px; margin-top:8px;">Storage & Privacy</div>
+          <div style="font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+            All video metadata, classifications, and preferences are stored exclusively in your local browser’s IndexedDB. No backend servers or tracking exist.
+          </div>
+          <button id="btn-clear-all-data" class="btn-sm" style="color:var(--color-avoid); border-color:rgba(239, 68, 68, 0.4); margin-top:4px; align-self:flex-start;">
+            Clear All Local Data & Reset
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODAL 4: YOUTUBE API KEY GUIDE
+         ========================================================================== -->
+    <div id="modal-api-guide" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="sheet-handle-pill"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">YouTube Data API Setup</div>
+          <button class="icon-btn btn-close-modal" aria-label="Close">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="sheet-body" style="font-size:12.5px; line-height:1.6; color:var(--text-secondary);">
+          <p><strong style="color:#fff;">How to get a free YouTube Data API v3 key:</strong></p>
+          <ol style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+            <li>Visit the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" style="color:var(--color-archive);">Google Cloud Console</a>.</li>
+            <li>Create a new project (e.g. <em>YouTube Sorter</em>).</li>
+            <li>Go to <strong>APIs &amp; Services &gt; Library</strong>, search for <strong>YouTube Data API v3</strong>, and click <strong>Enable</strong>.</li>
+            <li>Go to <strong>Credentials &gt; Create Credentials &gt; API Key</strong>.</li>
+            <li>Copy your key and paste it into the Import tab. Google gives 10,000 free quota units per day (enough for ~50,000 video metadata fetches daily).</li>
+          </ol>
+          <div style="background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-sm); padding:10px; color:#fca5a5; font-size:11.5px; margin-top:8px;">
+            <strong>Security Notice:</strong> In a client-side web application, any API key entered is stored locally in your browser’s IndexedDB. For maximum security, restrict your key in Google Cloud Console to the YouTube Data API v3.
+          </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODAL 5: LOCAL ORIGIN / ERROR 153 EXPLANATION & FIX
+         ========================================================================== -->
+    <div id="modal-local-origin-guide" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="sheet-handle-pill"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">Fixing YouTube Player Error 153</div>
+          <button class="icon-btn btn-close-modal" aria-label="Close">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="sheet-body" style="font-size:12.5px; line-height:1.6; color:var(--text-secondary);">
+          <div style="background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.3); border-radius:var(--radius-sm); padding:10px; color:#fca5a5; font-size:12px;">
+            <strong>Why did Error 153 happen?</strong><br>
+            You opened this file directly from your phone's storage (<code>content://</code> or <code>file://</code>). YouTube's security policy strictly blocks embedded video playback without a valid <code>http://</code> or <code>https://</code> origin.
+          </div>
+
+          <p style="font-weight:700; color:#fff; margin-top:8px;">Easy Solutions:</p>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <!-- Option 1 -->
+            <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:12px;">
+              <div style="font-weight:700; color:var(--color-watch); margin-bottom:4px;">Option 1: Open via Local Wi-Fi (Recommended)</div>
+              <div style="font-size:11.5px; color:var(--text-secondary);">
+                Since your computer is running a local server on your Wi-Fi/Hotspot, open this address in Chrome on your phone:
+              </div>
+              <div style="margin-top:6px; background:#000; padding:8px 10px; border-radius:6px; font-family:var(--font-mono); font-size:12px; color:#38bdf8; word-break:break-all; user-select:all;">
+                http://10.151.126.42:8080/index.html
+              </div>
+              <div style="font-size:10.5px; color:var(--text-muted); margin-top:4px;">
+                (Ensure phone and computer are connected to the same Wi-Fi or phone hotspot)
+              </div>
+            </div>
+
+            <!-- Option 2 -->
+            <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:12px;">
+              <div style="font-weight:700; color:var(--color-archive); margin-bottom:4px;">Option 2: Host for Free on GitHub Pages or Vercel</div>
+              <div style="font-size:11.5px; color:var(--text-secondary);">
+                Because this is a single static <code>index.html</code> file with no backend, you can drop it into any GitHub repository and turn on <strong>GitHub Pages</strong>, or drag-and-drop it into <strong>Vercel / Netlify / Cloudflare Pages</strong> to get a permanent free HTTPS web link you can bookmark on your phone!
+              </div>
+            </div>
+
+            <!-- Option 3 -->
+            <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:12px;">
+              <div style="font-weight:700; color:#cbd5e1; margin-bottom:4px;">Option 3: Tap "YT ↗" to inspect in YouTube App</div>
+              <div style="font-size:11.5px; color:var(--text-secondary);">
+                You can still swipe, organize, and sort all videos offline or locally. Whenever you want to preview an unavailable video, tap the <strong>YT ↗</strong> button on the card to open it directly in the YouTube app.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  
+  <script src="app.js"></script>
+</body>
+</html>
