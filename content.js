@@ -168,9 +168,57 @@
     return true;
   });
 
+  // --- Keyboard Shortcut: Cmd+S+S (Mac) or Ctrl+S+S (Win/Linux) to open Side Panel ---
+  let lastCmdSTime = 0;
+  let cmdSPendingTimeout = null;
+
+  function initKeyboardShortcut() {
+    window.addEventListener('keydown', (e) => {
+      // Ignore if user is currently typing in an input, textarea, or contentEditable
+      const targetTag = (e.target && e.target.tagName) || '';
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(targetTag) || (e.target && e.target.isContentEditable)) {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifierActive = isMac ? e.metaKey : e.ctrlKey;
+      const key = (e.key || '').toLowerCase();
+
+      // Check if modifier (Cmd / Ctrl) is held and key is 's'
+      if (modifierActive && key === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const now = Date.now();
+        if (now - lastCmdSTime < 650) {
+          // Double press chord detected: Cmd+S+S!
+          if (cmdSPendingTimeout) clearTimeout(cmdSPendingTimeout);
+          lastCmdSTime = 0;
+
+          const videos = scrapeVideosFromPage();
+          showInPageToast(`⚡ Opening Swipe Sorter (${isMac ? 'Cmd+S+S' : 'Ctrl+S+S'})...`);
+          chrome.runtime.sendMessage({
+            action: 'OPEN_SIDEPANEL_FROM_KEYBOARD',
+            videos: videos,
+            source: document.title.replace(' - YouTube', '')
+          });
+        } else {
+          // First Cmd+S press: Prompt user to tap 's' once more to complete chord
+          lastCmdSTime = now;
+          showInPageToast(`Press S again to open Swipe Sorter (${isMac ? 'Cmd+S+S' : 'Ctrl+S+S'})`);
+          if (cmdSPendingTimeout) clearTimeout(cmdSPendingTimeout);
+          cmdSPendingTimeout = setTimeout(() => {
+            lastCmdSTime = 0;
+          }, 650);
+        }
+      }
+    }, true);
+  }
+
   // Observe DOM changes on YouTube (SPA navigation & dynamic loading)
   function initObserver() {
     createFloatingButton();
+    initKeyboardShortcut();
 
     window.addEventListener('yt-navigate-finish', () => {
       setTimeout(updateButtonCount, 1200);

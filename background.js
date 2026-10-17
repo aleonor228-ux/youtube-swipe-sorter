@@ -18,12 +18,28 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 });
 
+// Listen for keyboard command shortcuts from manifest.json
+if (chrome.commands && chrome.commands.onCommand) {
+  chrome.commands.onCommand.addListener(async (command, tab) => {
+    try {
+      if (tab && tab.windowId) {
+        await chrome.sidePanel.open({ windowId: tab.windowId });
+      }
+    } catch (err) {
+      console.warn("Could not open side panel via command:", err);
+    }
+  });
+}
+
 // Relay messages between content scripts on YouTube and the side panel
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "OPEN_SIDEPANEL_WITH_VIDEOS") {
+  if (request.action === "OPEN_SIDEPANEL_WITH_VIDEOS" || request.action === "OPEN_SIDEPANEL_FROM_KEYBOARD") {
     if (sender.tab && sender.tab.windowId) {
       chrome.sidePanel.open({ windowId: sender.tab.windowId }).catch((err) => {
-        console.warn("Could not open side panel:", err);
+        console.warn("Could not open side panel by windowId, trying tabId:", err);
+        if (sender.tab.id) {
+          chrome.sidePanel.open({ tabId: sender.tab.id }).catch(console.warn);
+        }
       });
     }
     // Store temporarily in chrome.storage.local so side panel can pick it up on launch

@@ -57,7 +57,9 @@ You can run **YouTube Swipe Sorter** directly inside Chrome's native **Side Pane
 3. Click **Load unpacked** in the top-left corner.
 4. Select this project folder (`URL Sorter`).
 5. Open any YouTube page (search results, a channel's videos, shorts, or a playlist).
-6. Click the **YouTube Swipe Sorter** puzzle/action icon in your browser toolbar (or the floating `⚡ Swipe Sorter` pill on YouTube) — the side panel opens immediately and you can click **⚡ Scan Tab** to import all videos on screen in one tap!
+### Keyboard Shortcuts to Open:
+- **`Cmd + S + S`** (or **`Ctrl + S + S`** on Windows/Linux): On any YouTube page, hold `Cmd` and tap `S` twice quickly to instantly open the Swipe Sorter side panel and scan the page!
+- **`Command + Shift + S`** (or **`Ctrl + Shift + S`**): Chrome's global browser shortcut. You can also customize this in `chrome://extensions/shortcuts` to any combination you like.
 
 ---
 
